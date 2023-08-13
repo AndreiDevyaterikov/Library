@@ -1,12 +1,18 @@
 package library.entities;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
 @Data
 @Entity
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "books")
 public class BookEntity {
 
@@ -25,7 +31,10 @@ public class BookEntity {
     private Integer bookId;
 
     @Column(name = "title")
-    private String bookTitle;
+    private String title;
+
+    @Column(name = "count")
+    private Integer count;
 
     @ManyToMany
     @JoinTable(
