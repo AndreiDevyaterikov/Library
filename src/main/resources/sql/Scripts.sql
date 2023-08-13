@@ -1,3 +1,7 @@
+create sequence if not exists authors_id_seq start with 5;
+create sequence if not exists books_id_seq start with 5;
+create sequence if not exists logs_id_seq start with 5;
+
 create table if not exists authors
 (
     id   integer primary key,
