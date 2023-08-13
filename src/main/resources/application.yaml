@@ -9,10 +9,12 @@ spring:
     console:
       path: /h2-console
       enabled: true
-  r2dbc:
-    url: r2dbc:h2:file:///./db/library
-    username: root
-    password: root
+      settings:
+        trace: true
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: none
 springdoc:
   swagger-ui:
     path: /library.html
