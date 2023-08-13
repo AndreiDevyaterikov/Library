@@ -1,0 +1,3 @@
+databaseChangeLog:
+  - include:
+      file: 'sql/Scripts.sql'

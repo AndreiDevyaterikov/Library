@@ -2,7 +2,7 @@ spring:
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml
     enabled: true
-    url: jdbc:h2:file:./db/library;AUTO_SERVER=TRUE
+    url: jdbc:h2:file:./librarydb/library;AUTO_SERVER=TRUE
     password: root
     user: root
   h2:
