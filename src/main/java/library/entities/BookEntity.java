@@ -28,7 +28,7 @@ public class BookEntity {
             allocationSize = 1,
             initialValue = 5
     )
-    private Integer bookId;
+    private Integer id;
 
     @Column(name = "title")
     private String title;
@@ -43,4 +43,12 @@ public class BookEntity {
             inverseJoinColumns = @JoinColumn(name = "author_id")
     )
     private List<AuthorEntity> authors;
+
+    @ManyToMany
+    @JoinTable(
+            name = "book_genres",
+            joinColumns = @JoinColumn(name = "book_id"),
+            inverseJoinColumns = @JoinColumn(name = "genre_id")
+    )
+    private List<GenreEntity> genres;
 }

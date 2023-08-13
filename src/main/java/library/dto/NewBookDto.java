@@ -7,6 +7,7 @@ import java.util.List;
 @Data
 public class NewBookDto {
     private String title;
-    private List<String> authors;
     private Integer count;
+    private List<String> authors;
+    private List<String> genres;
 }

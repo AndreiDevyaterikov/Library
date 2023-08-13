@@ -11,21 +11,21 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "authors")
-public class AuthorEntity {
+@Table(name = "genres")
+public class GenreEntity {
 
     @Id
+    @Column(name = "id")
     @GeneratedValue(
             strategy = GenerationType.SEQUENCE,
-            generator = "SequenceAuthorId"
+            generator = "SequenceGenreId"
     )
     @SequenceGenerator(
-            name = "SequenceAuthorId",
-            sequenceName = "authors_id_seq",
+            name = "SequenceGenreId",
+            sequenceName = "genres_id_seq",
             allocationSize = 1,
             initialValue = 5
     )
-    @Column(name = "id")
     private Integer id;
 
     @Column(name = "name")
