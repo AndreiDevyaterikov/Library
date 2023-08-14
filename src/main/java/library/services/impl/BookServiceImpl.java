@@ -1,6 +1,5 @@
 package library.services.impl;
 
-import jakarta.persistence.EntityManager;
 import library.dto.NewBookDto;
 import library.dto.OrderDto;
 import library.entities.AuthorEntity;
@@ -27,7 +26,6 @@ public class BookServiceImpl implements BookService {
     private final BookRepository bookRepository;
     private final AuthorService authorService;
     private final GenreService genreService;
-    private final EntityManager entityManager;
 
     @Override
     public BookEntity addNewBook(NewBookDto newBookDto) {
