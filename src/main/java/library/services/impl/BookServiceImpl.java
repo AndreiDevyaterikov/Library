@@ -1,6 +1,8 @@
 package library.services.impl;
 
+import jakarta.persistence.EntityManager;
 import library.dto.NewBookDto;
+import library.dto.OrderDto;
 import library.entities.AuthorEntity;
 import library.entities.BookEntity;
 import library.entities.GenreEntity;
@@ -9,7 +11,14 @@ import library.services.AuthorService;
 import library.services.BookService;
 import library.services.GenreService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -18,6 +27,7 @@ public class BookServiceImpl implements BookService {
     private final BookRepository bookRepository;
     private final AuthorService authorService;
     private final GenreService genreService;
+    private final EntityManager entityManager;
 
     @Override
     public BookEntity addNewBook(NewBookDto newBookDto) {
@@ -34,7 +44,7 @@ public class BookServiceImpl implements BookService {
                     .stream()
                     .map(genre -> {
                         var existGenreOpt = genreService.findByName(genre);
-                        if(existGenreOpt.isPresent()) {
+                        if (existGenreOpt.isPresent()) {
                             return existGenreOpt.get();
                         } else {
                             var newGenreEntity = GenreEntity.builder()
@@ -70,5 +80,26 @@ public class BookServiceImpl implements BookService {
 
             return newBookEntity;
         }
+    }
+
+    @Override
+    public Page<BookEntity> getAll(List<OrderDto> ordersDto, Integer pageNumber, Integer pageSize) {
+
+        Pageable page;
+
+        if (Objects.isNull(ordersDto) || ordersDto.isEmpty()) {
+            page = PageRequest.of(pageNumber - 1, pageSize);
+        } else {
+            var sortOrders = ordersDto
+                    .stream()
+                    .map(
+                            orderDto -> new Sort.Order(
+                                    orderDto.getDirection(), orderDto.getField()
+                            )
+                    ).
+                    toList();
+            page = PageRequest.of(pageNumber - 1, pageSize, Sort.by(sortOrders));
+        }
+        return bookRepository.findAll(page);
     }
 }
