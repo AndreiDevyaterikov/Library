@@ -2,10 +2,9 @@ package library.enums;
 
 public enum Operations {
     EQUALS,
-    LESS_OR_EQUALS_THAN,
+    LESS_THAN_OR_EQUALS,
     LESS_THAN,
-    GREATER_OR_EQUALS_THAN,
+    GREATER_THAN_OR_EQUALS,
     GREATER_THAN,
-    LIKE_THAN
-
+    LIKE
 }

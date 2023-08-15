@@ -124,11 +124,11 @@ public class BookServiceImpl implements BookService {
             for (int i = 0; i < criteriesDto.size(); i++) {
                 var criteria = criteriesDto.get(i);
 
-                if (Objects.equals(criteria.getField(),"authors")) {
+                if (Objects.equals(criteria.getField(), "authors")) {
                     Join<AuthorEntity, BookEntity> bookAuthors = root.join("authors");
-                    if (criteria.getOperation().equalsIgnoreCase(":")) {
+                    if (criteria.getOperation().equals(Operations.EQUALS)) {
                         predicates[i] = criteriaBuilder.equal(bookAuthors.get("name"), criteria.getValue());
-                    } else if (criteria.getOperation().equals("like")) {
+                    } else if (criteria.getOperation().equals(Operations.LIKE)) {
                         predicates[i] = criteriaBuilder.like(bookAuthors.get("name"), "%" + criteria.getValue() + "%");
                     } else {
                         throw new RuntimeException(
@@ -139,11 +139,11 @@ public class BookServiceImpl implements BookService {
                         );
                     }
                 } else if (criteria.getField().equals("genres")) {
-                    Join<GenreEntity, BookEntity> bookAuthors = root.join("genres");
-                    if (criteria.getOperation().equals(":")) {
-                        predicates[i] = criteriaBuilder.equal(bookAuthors.get("name"), criteria.getValue());
-                    } else if (criteria.getOperation().equals("like")) {
-                        predicates[i] = criteriaBuilder.like(bookAuthors.get("name"), "%" + criteria.getValue() + "%");
+                    Join<GenreEntity, BookEntity> bookGenres = root.join("genres");
+                    if (criteria.getOperation().equals(Operations.EQUALS)) {
+                        predicates[i] = criteriaBuilder.equal(bookGenres.get("name"), criteria.getValue());
+                    } else if (criteria.getOperation().equals(Operations.LIKE)) {
+                        predicates[i] = criteriaBuilder.like(bookGenres.get("name"), "%" + criteria.getValue() + "%");
                     } else {
                         throw new RuntimeException(
                                 String.format(
@@ -153,32 +153,7 @@ public class BookServiceImpl implements BookService {
                         );
                     }
                 } else {
-                    switch (criteria.getOperation()) {
-
-                        case ":" -> predicates[i] = criteriaBuilder.equal(
-                                root.get(criteria.getField()), criteria.getValue()
-                        );
-
-                        case "like" -> predicates[i] = criteriaBuilder.like(
-                                root.get(criteria.getField()), "%" + criteria.getValue() + "%"
-                        );
-
-                        case "<" -> predicates[i] = criteriaBuilder.lessThan(
-                                root.get(criteria.getField()), criteria.getValue()
-                        );
-
-                        case "<=" -> predicates[i] = criteriaBuilder.lessThanOrEqualTo(
-                                root.get(criteria.getField()), criteria.getValue()
-                        );
-
-                        case ">" -> predicates[i] = criteriaBuilder.greaterThan(
-                                root.get(criteria.getField()), criteria.getValue()
-                        );
-
-                        case ">=" -> predicates[i] = criteriaBuilder.greaterThanOrEqualTo(
-                                root.get(criteria.getField()), criteria.getValue()
-                        );
-                    }
+                    defaultFieldOperation(criteriaBuilder, root, predicates, i, criteria);
                 }
 
                 if (Objects.nonNull(criteria.getDirection())) {
@@ -211,11 +186,41 @@ public class BookServiceImpl implements BookService {
         Root<BookEntity> booksCountRoot = countQuery.from(BookEntity.class);
 
         countQuery.select(criteriaBuilder.count(booksCountRoot));
-        var lotalCount = entityManager.createQuery(countQuery).getSingleResult();
-        return new PageImpl<>(pagedBookEntity, pageable, lotalCount);
+        var totalCount = entityManager.createQuery(countQuery).getSingleResult();
+        return new PageImpl<>(pagedBookEntity, pageable, totalCount);
     }
 
-    private  <T> TypedQuery<T> paginateQuery(TypedQuery<T> query, Pageable pageable) {
+    private void defaultFieldOperation(CriteriaBuilder criteriaBuilder, Root<BookEntity> root,
+                                       Predicate[] predicates, int i, SearchCriteriaDto criteria) {
+        switch (criteria.getOperation()) {
+
+            case EQUALS -> predicates[i] = criteriaBuilder.equal(
+                    root.get(criteria.getField()), criteria.getValue()
+            );
+
+            case LIKE -> predicates[i] = criteriaBuilder.like(
+                    root.get(criteria.getField()), "%" + criteria.getValue() + "%"
+            );
+
+            case LESS_THAN -> predicates[i] = criteriaBuilder.lessThan(
+                    root.get(criteria.getField()), criteria.getValue()
+            );
+
+            case LESS_THAN_OR_EQUALS -> predicates[i] = criteriaBuilder.lessThanOrEqualTo(
+                    root.get(criteria.getField()), criteria.getValue()
+            );
+
+            case GREATER_THAN -> predicates[i] = criteriaBuilder.greaterThan(
+                    root.get(criteria.getField()), criteria.getValue()
+            );
+
+            case GREATER_THAN_OR_EQUALS -> predicates[i] = criteriaBuilder.greaterThanOrEqualTo(
+                    root.get(criteria.getField()), criteria.getValue()
+            );
+        }
+    }
+
+    private <T> TypedQuery<T> paginateQuery(TypedQuery<T> query, Pageable pageable) {
         if (pageable.isPaged()) {
             query.setFirstResult((int) pageable.getOffset());
             query.setMaxResults(pageable.getPageSize());

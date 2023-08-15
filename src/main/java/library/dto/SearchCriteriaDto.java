@@ -7,7 +7,7 @@ import org.springframework.data.domain.Sort;
 @Data
 public class SearchCriteriaDto {
     private String field;
-    private String operation;
+    private Operations operation;
     private String value;
     private Sort.Direction direction;
 }
