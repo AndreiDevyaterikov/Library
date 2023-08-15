@@ -2,11 +2,9 @@ package library.controllers;
 
 import jakarta.annotation.Nullable;
 import library.dto.NewBookDto;
-import library.dto.OrderDto;
 import library.dto.SearchCriteriaDto;
 import library.entities.BookEntity;
 import library.services.BookService;
-import library.services.impl.BookServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +16,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class BookController {
 
-    private final BookServiceImpl bookService;
+    private final BookService bookService;
 
     @PostMapping("/add")
     public BookEntity addNewBook(@RequestBody NewBookDto newBookDto) {
@@ -27,19 +25,10 @@ public class BookController {
 
     @PostMapping("/all")
     public Page<BookEntity> getAll(
-            @Nullable @RequestBody List<OrderDto> ordersDto,
+            @Nullable @RequestBody List<SearchCriteriaDto> criteriesDto,
             @RequestParam Integer pageNumber,
             @RequestParam Integer pageSize
     ) {
-        return bookService.getAll(ordersDto, pageNumber, pageSize);
-    }
-
-    @PostMapping("/criteria")
-    public Page<BookEntity> getAllCriteria (
-            @Nullable @RequestBody List<SearchCriteriaDto> criteriasDto,
-            @RequestParam Integer pageNumber,
-            @RequestParam Integer pageSize
-    ) {
-        return bookService.getAllCriteria(criteriasDto, pageNumber, pageSize);
+        return bookService.getAll(criteriesDto, pageNumber, pageSize);
     }
 }

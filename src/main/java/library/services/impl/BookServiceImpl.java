@@ -4,7 +4,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.*;
 import library.dto.NewBookDto;
-import library.dto.OrderDto;
 import library.dto.SearchCriteriaDto;
 import library.entities.AuthorEntity;
 import library.entities.BookEntity;
@@ -85,39 +84,17 @@ public class BookServiceImpl implements BookService {
     }
 
     @Override
-    public Page<BookEntity> getAll(List<OrderDto> ordersDto, Integer pageNumber, Integer pageSize) {
+    public Page<BookEntity> getAll(List<SearchCriteriaDto> criteriesDto, Integer pageNumber, Integer pageSize) {
 
-        Pageable page;
-
-        if (Objects.isNull(ordersDto) || ordersDto.isEmpty()) {
-            page = PageRequest.of(pageNumber - 1, pageSize);
-        } else {
-            var sortOrders = ordersDto
-                    .stream()
-                    .map(
-                            orderDto -> new Sort.Order(
-                                    orderDto.getDirection(), orderDto.getField()
-                            )
-                    ).
-                    toList();
-            page = PageRequest.of(pageNumber - 1, pageSize, Sort.by(sortOrders));
-        }
-        return bookRepository.findAll(page);
-    }
-
-    public Page<BookEntity> getAllCriteria(List<SearchCriteriaDto> criteriesDto, Integer pageNumber, Integer pageSize) {
-
-        Pageable pageable = PageRequest.of(pageNumber, pageSize);
+        Pageable pageable = PageRequest.of(pageNumber - 1, pageSize);
 
         CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
         CriteriaQuery<BookEntity> criteriaQuery = criteriaBuilder.createQuery(BookEntity.class);
         Root<BookEntity> root = criteriaQuery.from(BookEntity.class);
 
-        Predicate[] predicates = new Predicate[0];
-
         if (Objects.nonNull(criteriesDto)) {
 
-            predicates = new Predicate[criteriesDto.size()];
+            Predicate[] predicates = new Predicate[criteriesDto.size()];
 
             List<Order> orders = new ArrayList<>();
 
@@ -129,7 +106,10 @@ public class BookServiceImpl implements BookService {
                     if (criteria.getOperation().equals(Operations.EQUALS)) {
                         predicates[i] = criteriaBuilder.equal(bookAuthors.get("name"), criteria.getValue());
                     } else if (criteria.getOperation().equals(Operations.LIKE)) {
-                        predicates[i] = criteriaBuilder.like(bookAuthors.get("name"), "%" + criteria.getValue() + "%");
+                        predicates[i] = criteriaBuilder.like(
+                                bookAuthors.get("name"),
+                                "%" + criteria.getValue() + "%"
+                        );
                     } else {
                         throw new RuntimeException(
                                 String.format(
@@ -143,7 +123,10 @@ public class BookServiceImpl implements BookService {
                     if (criteria.getOperation().equals(Operations.EQUALS)) {
                         predicates[i] = criteriaBuilder.equal(bookGenres.get("name"), criteria.getValue());
                     } else if (criteria.getOperation().equals(Operations.LIKE)) {
-                        predicates[i] = criteriaBuilder.like(bookGenres.get("name"), "%" + criteria.getValue() + "%");
+                        predicates[i] = criteriaBuilder.like(
+                                bookGenres.get("name"),
+                                "%" + criteria.getValue() + "%"
+                        );
                     } else {
                         throw new RuntimeException(
                                 String.format(
@@ -181,12 +164,9 @@ public class BookServiceImpl implements BookService {
                     .where(predicates);
         }
 
-        List<BookEntity> pagedBookEntity = paginateQuery(entityManager.createQuery(criteriaQuery), pageable).getResultList();
-        CriteriaQuery<Long> countQuery = criteriaBuilder.createQuery(Long.class);
-        Root<BookEntity> booksCountRoot = countQuery.from(BookEntity.class);
-
-        countQuery.select(criteriaBuilder.count(booksCountRoot));
-        var totalCount = entityManager.createQuery(countQuery).getSingleResult();
+        List<BookEntity> pagedBookEntity = paginateQuery(entityManager.createQuery(criteriaQuery), pageable)
+                .getResultList();
+        var totalCount = entityManager.createQuery(criteriaQuery).getResultList().size();
         return new PageImpl<>(pagedBookEntity, pageable, totalCount);
     }
 
