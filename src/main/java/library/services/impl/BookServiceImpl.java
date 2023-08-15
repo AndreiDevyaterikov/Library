@@ -9,18 +9,22 @@ import library.entities.AuthorEntity;
 import library.entities.BookEntity;
 import library.entities.GenreEntity;
 import library.enums.Operations;
+import library.exceptions.LibraryException;
 import library.repositories.BookRepository;
 import library.services.AuthorService;
 import library.services.BookService;
 import library.services.GenreService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.*;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BookServiceImpl implements BookService {
@@ -111,12 +115,12 @@ public class BookServiceImpl implements BookService {
                                 "%" + criteria.getValue() + "%"
                         );
                     } else {
-                        throw new RuntimeException(
-                                String.format(
-                                        "Not supported operation %s for field %s and value %s",
-                                        criteria.getOperation(), criteria.getField(), criteria.getValue()
-                                )
+                        var message = String.format(
+                                "Not supported operation %s for field %s and value %s",
+                                criteria.getOperation(), criteria.getField(), criteria.getValue()
                         );
+                        log.error(message);
+                        throw new LibraryException(message, HttpStatus.INTERNAL_SERVER_ERROR);
                     }
                 } else if (criteria.getField().equals("genres")) {
                     Join<GenreEntity, BookEntity> bookGenres = root.join("genres");
@@ -128,12 +132,12 @@ public class BookServiceImpl implements BookService {
                                 "%" + criteria.getValue() + "%"
                         );
                     } else {
-                        throw new RuntimeException(
-                                String.format(
-                                        "Not supported operation %s for field %s and value %s",
-                                        criteria.getOperation(), criteria.getField(), criteria.getValue()
-                                )
+                        var message = String.format(
+                                "Not supported operation %s for field %s and value %s",
+                                criteria.getOperation(), criteria.getField(), criteria.getValue()
                         );
+                        log.error(message);
+                        throw new LibraryException(message, HttpStatus.INTERNAL_SERVER_ERROR);
                     }
                 } else {
                     defaultFieldOperation(criteriaBuilder, root, predicates, i, criteria);
@@ -154,7 +158,6 @@ public class BookServiceImpl implements BookService {
                         );
                     }
                 }
-
             }
             if (!orders.isEmpty()) {
                 criteriaQuery.orderBy(orders);
