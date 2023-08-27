@@ -3,13 +3,14 @@ package library.services.impl;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.*;
-import library.dto.NewBookDto;
+import library.dto.BookDto;
 import library.dto.SearchCriteriaDto;
 import library.entities.AuthorEntity;
 import library.entities.BookEntity;
 import library.entities.GenreEntity;
 import library.enums.Operations;
-import library.exceptions.LibraryException;
+import library.exceptions.LibraryConflictException;
+import library.exceptions.LibraryNotFoundException;
 import library.repositories.BookRepository;
 import library.services.AuthorService;
 import library.services.BookService;
@@ -17,7 +18,6 @@ import library.services.GenreService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.*;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -35,17 +35,17 @@ public class BookServiceImpl implements BookService {
     private final EntityManager entityManager;
 
     @Override
-    public BookEntity addNewBook(NewBookDto newBookDto) {
+    public BookEntity addNewBook(BookDto bookDto) {
 
-        var existBookOpt = bookRepository.findByTitle(newBookDto.getTitle());
+        var existBookOpt = bookRepository.findByTitle(bookDto.getTitle());
 
         if (existBookOpt.isPresent()) {
             var existBook = existBookOpt.get();
-            existBook.setCount(existBook.getCount() + newBookDto.getCount());
+            existBook.setCount(existBook.getCount() + bookDto.getCount());
             bookRepository.save(existBook);
             return existBook;
         } else {
-            var genres = newBookDto.getGenres()
+            var genres = bookDto.getGenres()
                     .stream()
                     .map(genre -> {
                         var existGenreOpt = genreService.findByName(genre);
@@ -60,7 +60,7 @@ public class BookServiceImpl implements BookService {
                         }
                     }).toList();
 
-            var authors = newBookDto.getAuthors()
+            var authors = bookDto.getAuthors()
                     .stream()
                     .map(author -> {
                         var existAuthorOpt = authorService.findByName(author);
@@ -76,8 +76,8 @@ public class BookServiceImpl implements BookService {
                     }).toList();
 
             var newBookEntity = BookEntity.builder()
-                    .title(newBookDto.getTitle())
-                    .count(newBookDto.getCount())
+                    .title(bookDto.getTitle())
+                    .count(bookDto.getCount())
                     .authors(authors)
                     .genres(genres)
                     .build();
@@ -120,7 +120,7 @@ public class BookServiceImpl implements BookService {
                                 criteria.getOperation(), criteria.getField(), criteria.getValue()
                         );
                         log.error(message);
-                        throw new LibraryException(message, HttpStatus.INTERNAL_SERVER_ERROR);
+                        throw new LibraryConflictException(message);
                     }
                 } else if (criteria.getField().equals("genres")) {
                     Join<GenreEntity, BookEntity> bookGenres = root.join("genres");
@@ -137,7 +137,7 @@ public class BookServiceImpl implements BookService {
                                 criteria.getOperation(), criteria.getField(), criteria.getValue()
                         );
                         log.error(message);
-                        throw new LibraryException(message, HttpStatus.INTERNAL_SERVER_ERROR);
+                        throw new LibraryConflictException(message);
                     }
                 } else {
                     defaultFieldOperation(criteriaBuilder, root, predicates, i, criteria);
@@ -209,5 +209,129 @@ public class BookServiceImpl implements BookService {
             query.setMaxResults(pageable.getPageSize());
         }
         return query;
+    }
+
+    @Override
+    public BookEntity editBook(Integer bookId, BookDto selectedBook) {
+
+        var existBookOpt = bookRepository.findById(bookId);
+        String message;
+        if (existBookOpt.isPresent()) {
+
+            var existBook = existBookOpt.get();
+            message = String.format("Found book %s", existBook);
+            log.info(message);
+
+            if (Objects.nonNull(selectedBook.getTitle())) {
+                existBook.setTitle(selectedBook.getTitle());
+            }
+
+            if (Objects.nonNull(selectedBook.getCount())) {
+                existBook.setCount(selectedBook.getCount());
+            }
+
+            if (Objects.nonNull(selectedBook.getAuthors())) {
+                if (!selectedBook.getAuthors().isEmpty()) {
+
+                    var selectedBookAuthors = selectedBook.getAuthors();
+                    var authorsOfExistBook = existBook.getAuthors();
+
+                    selectedBookAuthors.forEach(author -> {
+
+                        var existAuthorOpt = authorService.findByName(author);
+
+                        if (existAuthorOpt.isPresent()) {
+                            var existAuthor = existAuthorOpt.get();
+                            if (!authorsOfExistBook.contains(existAuthor)) {
+                                authorsOfExistBook.add(existAuthor);
+                                var addedAuthorMessage = String.format(
+                                        "Added author %s",
+                                        existAuthor
+                                );
+                                log.info(addedAuthorMessage);
+                            } else {
+                                var existAuthorMessage = String.format("Author %s already exist in book", author);
+                                log.info(existAuthorMessage);
+                            }
+                        } else {
+                            var newAuthor = AuthorEntity.builder()
+                                    .name(author)
+                                    .build();
+                            authorService.saveAuthor(newAuthor);
+                            var newAuthorMessage = String.format(
+                                    "Saved new author %s",
+                                    newAuthor
+                            );
+                            log.info(newAuthorMessage);
+                            authorsOfExistBook.add(newAuthor);
+                            newAuthorMessage = String.format(
+                                    "Added new author %s to book %s",
+                                    newAuthor,
+                                    existBook
+                            );
+                            log.info(newAuthorMessage);
+                        }
+                    });
+                }
+            }
+
+            if (Objects.nonNull(selectedBook.getGenres())) {
+                if (!selectedBook.getGenres().isEmpty()) {
+
+                    var selectedBookGenres = selectedBook.getGenres();
+                    var genresOfExistBook = existBook.getGenres();
+
+                    selectedBookGenres.forEach(genre -> {
+
+                        var existGenreOpt = genreService.findByName(genre);
+
+                        if (existGenreOpt.isPresent()) {
+                            var existGenre = existGenreOpt.get();
+                            if (!genresOfExistBook.contains(existGenre)) {
+                                genresOfExistBook.add(existGenre);
+                                var addedGenreMessage = String.format(
+                                        "Added genre %s",
+                                        existGenre
+                                );
+                                log.info(addedGenreMessage);
+                            } else {
+                                var existGenreMessage = String.format("Genres %s already exist in book", genre);
+                                log.info(existGenreMessage);
+                            }
+                        } else {
+                            var newGenre = GenreEntity.builder()
+                                    .name(genre)
+                                    .build();
+                            genreService.saveGenre(newGenre);
+                            var newGenreMessage = String.format(
+                                    "Saved new genre %s",
+                                    newGenre
+                            );
+                            log.info(newGenreMessage);
+                            genresOfExistBook.add(newGenre);
+                            newGenreMessage = String.format(
+                                    "Added new genre %s to book %s",
+                                    newGenre,
+                                    existBook
+                            );
+                            log.info(newGenreMessage);
+                        }
+                    });
+                }
+            }
+
+            bookRepository.save(existBook);
+            message = String.format("Saved edited book %s", existBook);
+            log.info(message);
+            return existBook;
+
+        } else {
+            message = String.format(
+                    "Not found book by id %d",
+                    bookId
+            );
+            log.warn(message);
+            throw new LibraryNotFoundException(message);
+        }
     }
 }

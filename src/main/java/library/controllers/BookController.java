@@ -1,7 +1,7 @@
 package library.controllers;
 
 import jakarta.annotation.Nullable;
-import library.dto.NewBookDto;
+import library.dto.BookDto;
 import library.dto.SearchCriteriaDto;
 import library.entities.BookEntity;
 import library.services.BookService;
@@ -19,8 +19,8 @@ public class BookController {
     private final BookService bookService;
 
     @PostMapping("/add")
-    public BookEntity addNewBook(@RequestBody NewBookDto newBookDto) {
-        return bookService.addNewBook(newBookDto);
+    public BookEntity addNewBook(@RequestBody BookDto bookDto) {
+        return bookService.addNewBook(bookDto);
     }
 
     @PostMapping("/all")
@@ -30,5 +30,11 @@ public class BookController {
             @RequestParam Integer pageSize
     ) {
         return bookService.getAll(criteriesDto, pageNumber, pageSize);
+    }
+
+    @PatchMapping
+    public BookEntity editBook(@RequestParam Integer bookId,
+                               @RequestBody BookDto book) {
+        return bookService.editBook(bookId, book);
     }
 }
