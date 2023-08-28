@@ -2,24 +2,13 @@ spring:
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml
     enabled: true
-    url: jdbc:h2:file:./librarydb/library
-    password: root
-    user: root
   datasource:
-    url: jdbc:h2:file:./librarydb/library;AUTO_SERVER=TRUE;DATABASE_TO_LOWER=TRUE;MODE=POSTGRESQL
+    url: jdbc:postgresql://localhost:5432/postgres
     password: root
-    username: root
-    driver-class-name: org.h2.Driver
-  h2:
-    console:
-      path: /h2-console
-      enabled: true
+    username: postgres
   jpa:
     hibernate:
       ddl-auto: none
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.H2Dialect
     show-sql: true
 springdoc:
   swagger-ui:
